@@ -1,0 +1,65 @@
+# [Ctrl]+[Alt]+[R] で各セクションを実行
+
+### カテゴリ一覧の取得
+GET http://localhost:3000/api/categories
+
+### カテゴリの作成
+POST http://localhost:3000/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "カテゴリ6"
+}
+
+### カテゴリの削除
+@post_id = 46562fea-edf7-4d72-9ac3-8add07b38260
+DELETE http://localhost:3000/api/admin/categories/{{post_id}}
+
+### カテゴリの名前を変更
+@post_id = 9bbb6f5b-176b-4d5e-8d9b-191e07918cb1
+PUT http://localhost:3000/api/admin/categories/{{post_id}}
+Content-Type: application/json
+
+{
+  "name": "カテゴリA"
+}
+
+### 投稿記事一覧の取得
+GET http://localhost:3000/api/posts
+
+### 投稿記事(指定した1つ)の取得
+@post_id = 8907fa80-df77-46f9-9602-e1a8a0e47271
+GET http://localhost:3000/api/posts/{{post_id}}
+
+### 投稿記事(指定した1つ)の削除
+@post_id = 8907fa80-df77-46f9-9602-e1a8a0e47271
+DELETE http://localhost:3000/api/admin/posts/{{post_id}}
+
+### 投稿記事(指定した1つ)の更新
+@post_id = 7aceb6df-1e86-4b5a-a508-4ede9d5b7810
+PUT http://localhost:3000/api/admin/posts/{{post_id}}
+Content-Type: application/json
+
+{
+  "title": "投稿Z",
+  "content": "投稿Zの本文。<br/>投稿Zの本文。投稿Zの本文。",
+  "coverImageURL": "https://w1980.blob.core.windows.net/pg3/cover-img-purple.jpg",
+  "categoryIds": [
+    "3a630da8-388d-45f5-b2a4-dbd0a9ba0018",
+    "1dfe3bd6-f9b9-4fc1-8208-0d412f19ee83"
+  ]
+}
+
+### 記事の投稿
+POST http://localhost:3000/api/admin/posts
+Content-Type: application/json
+
+{
+  "title": "投稿X",
+  "content": "投稿Xの本文。<br/>投稿Xの本文。投稿Xの本文。",
+  "coverImageURL": "https://....",
+  "categoryIds": [
+    "87d9ecdf-f6c1-448c-af9d-2d67fd135fec",
+    "1dfe3bd6-f9b9-4fc1-8208-0d412f19ee83"
+  ]
+}
