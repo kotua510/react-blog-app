@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Category = {
   id: string;
@@ -19,45 +20,54 @@ type EditPostResponse = {
   }[];
 };
 
+type CategoryView = "col2" | "col3";
+
 const EditPostPage = () => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [coverImageURL, setCoverImageURL] = useState<string | undefined>();
+  const [coverImageURL, setCoverImageURL] =
+    useState<string | undefined>();
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] =
+    useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // カテゴリ表示モード
+  const [categoryView, setCategoryView] =
+    useState<CategoryView>("col2");
+
+  // ★ 追加：カテゴリ検索
+  const [categorySearch, setCategorySearch] =
+    useState("");
 
   // 初期データ取得
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 投稿取得
-        const postRes = await fetch(`/api/admin/posts/${id}`, {
-          cache: "no-store",
-        });
-        if (!postRes.ok) throw new Error("投稿取得失敗");
+        const postRes = await fetch(
+          `/api/admin/posts/${id}`,
+          { cache: "no-store" }
+        );
+        if (!postRes.ok) throw new Error();
 
-        const post: EditPostResponse = await postRes.json();
+        const post: EditPostResponse =
+          await postRes.json();
 
         setTitle(post.title);
         setContent(post.content);
-        setCoverImageURL(post.coverImageURL ?? undefined);
-        setCategoryIds(
-        post.categories.map((cat) => cat.id)
-        );
+        setCoverImageURL(post.coverImageURL);
+        setCategoryIds(post.categories.map((c) => c.id));
 
-        // カテゴリ一覧取得
         const catRes = await fetch("/api/categories", {
           cache: "no-store",
         });
-        if (!catRes.ok) throw new Error("カテゴリ取得失敗");
+        if (!catRes.ok) throw new Error();
 
-        const categories = await catRes.json();
-        setAllCategories(categories);
-      } catch (e) {
+        setAllCategories(await catRes.json());
+      } catch {
         alert("データの取得に失敗しました");
         router.push("/admin/posts");
       } finally {
@@ -68,7 +78,15 @@ const EditPostPage = () => {
     fetchData();
   }, [id, router]);
 
-  // チェックボックス切り替え
+  // カテゴリ検索結果
+  const filteredCategories = useMemo(() => {
+    return allCategories.filter((cat) =>
+      cat.name
+        .toLowerCase()
+        .includes(categorySearch.toLowerCase())
+    );
+  }, [allCategories, categorySearch]);
+
   const toggleCategory = (categoryId: string) => {
     setCategoryIds((prev) =>
       prev.includes(categoryId)
@@ -77,7 +95,6 @@ const EditPostPage = () => {
     );
   };
 
-  // 更新
   const handleUpdate = async () => {
     const res = await fetch(`/api/admin/posts/${id}`, {
       method: "PUT",
@@ -99,7 +116,6 @@ const EditPostPage = () => {
     router.push("/admin/posts");
   };
 
-  // 削除
   const handleDelete = async () => {
     if (!confirm("この投稿を削除しますか？")) return;
 
@@ -119,11 +135,30 @@ const EditPostPage = () => {
 
   return (
     <main className="space-y-6 max-w-2xl">
+      {/* 上部ナビ */}
+      <header className="flex gap-2">
+        <Link
+          href="/admin/posts"
+          className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300"
+        >
+          投稿記事一覧
+        </Link>
+
+        <Link
+          href="/admin"
+          className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300"
+        >
+          管理画面トップ
+        </Link>
+      </header>
+
       <h1 className="text-xl font-bold">投稿編集</h1>
 
       {/* タイトル */}
       <div>
-        <label className="block font-semibold">タイトル</label>
+        <label className="block font-semibold">
+          タイトル
+        </label>
         <input
           className="border p-2 w-full"
           value={title}
@@ -131,9 +166,11 @@ const EditPostPage = () => {
         />
       </div>
 
-      {/* 内容 */}
+      {/* 本文 */}
       <div>
-        <label className="block font-semibold">本文</label>
+        <label className="block font-semibold">
+          本文
+        </label>
         <textarea
           className="border p-2 w-full h-40"
           value={content}
@@ -141,26 +178,85 @@ const EditPostPage = () => {
         />
       </div>
 
-      {/* カバー画像URL */}
+      {/* カバー画像 */}
       <div>
-        <label className="block font-semibold">カバー画像URL</label>
+        <label className="block font-semibold">
+          カバー画像URL
+        </label>
         <input
           className="border p-2 w-full"
           value={coverImageURL ?? ""}
-          onChange={(e) => setCoverImageURL(e.target.value || undefined)}
+          onChange={(e) =>
+            setCoverImageURL(
+              e.target.value || undefined
+            )
+          }
         />
       </div>
 
       {/* カテゴリ */}
       <div>
-        <label className="block font-semibold mb-1">カテゴリ</label>
-        <div className="space-y-1">
-          {allCategories.map((cat) => (
-            <label key={cat.id} className="flex items-center space-x-2">
+        <div className="flex items-center justify-between mb-2">
+          <label className="font-semibold">
+            カテゴリ
+          </label>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setCategoryView("col2")}
+              className={`px-2 py-1 border rounded text-sm ${
+                categoryView === "col2"
+                  ? "bg-blue-600 text-white"
+                  : ""
+              }`}
+            >
+              縦2列
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCategoryView("col3")}
+              className={`px-2 py-1 border rounded text-sm ${
+                categoryView === "col3"
+                  ? "bg-blue-600 text-white"
+                  : ""
+              }`}
+            >
+              縦3列
+            </button>
+          </div>
+        </div>
+
+        {/* ★ カテゴリ検索 */}
+        <input
+          type="text"
+          placeholder="カテゴリ検索"
+          value={categorySearch}
+          onChange={(e) =>
+            setCategorySearch(e.target.value)
+          }
+          className="border px-2 py-1 rounded w-full mb-2"
+        />
+
+        <div
+          className={`grid gap-1 ${
+            categoryView === "col2"
+              ? "grid-cols-2"
+              : "grid-cols-3"
+          }`}
+        >
+          {filteredCategories.map((cat) => (
+            <label
+              key={cat.id}
+              className="flex items-center space-x-2"
+            >
               <input
                 type="checkbox"
                 checked={categoryIds.includes(cat.id)}
-                onChange={() => toggleCategory(cat.id)}
+                onChange={() =>
+                  toggleCategory(cat.id)
+                }
               />
               <span>{cat.name}</span>
             </label>

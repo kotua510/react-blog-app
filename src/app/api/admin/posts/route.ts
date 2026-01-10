@@ -63,13 +63,24 @@ export const POST = async (req: NextRequest) => {
 export const GET = async (req: NextRequest) => {
   try {
     const posts = await prisma.post.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
       select: {
         id: true,
         title: true,
         createdAt: true,
-      },
-      orderBy: {
-        createdAt: "desc",
+        categories: {
+          select: {
+            id: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -82,4 +93,3 @@ export const GET = async (req: NextRequest) => {
     );
   }
 };
-
